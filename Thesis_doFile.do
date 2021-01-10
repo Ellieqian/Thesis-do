@@ -193,7 +193,8 @@ Things to adjust for:
 * Generate unintended pregnancy binary variable
 	gen unintended_preg=0
 	replace unintended_preg=1 if pregnancy_desired==2 | pregnancy_desired==3 
-	lab var education "Unintended pregnancy" 
+	lab var unintended_preg "Unintended pregnancy" 
+	label val unintended_preg yesno
 
 * Generate binary marital status variable 
 	gen married=0 if marital_status!=.
