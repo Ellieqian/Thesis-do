@@ -60,13 +60,17 @@ Things to adjust for:
 	local today=c(current_date)
 	local c_today= "`today'"
 	global date=subinstr("`c_today'", " ", "",.)
-
+	
 * Run .do file to merge baseline and 6-week data 
 	run "$dofiledir/6Week_Merge.do"
 
 * Load data
-	use "$datadir/`COHORT'_6W_Merged_$date.dta", clear
+	use "$datadir/`COHORT'_6W_Merged_$date.dta"
+	
+* Create log file
 	cd $output
+	capture log close
+	log using "Thesis.log", replace
 
 * Generate strata
 	drop strata
