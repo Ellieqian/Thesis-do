@@ -50,7 +50,7 @@ Things to adjust for:
 
 * Change directory and make sub-folder
 	global datadir "/Users/Ellie/Desktop/THESIS/Data"
-	global dofiledir "/Users/Ellie/Desktop/THESIS/Do-files"
+	global dofiledir "/Users/Ellie/Desktop/THESIS/Thesis-do"
 	global output "/Users/Ellie/Desktop/THESIS/Output"
 	
 *Year Macros
@@ -62,14 +62,11 @@ Things to adjust for:
 	global date=subinstr("`c_today'", " ", "",.)
 
 * Run .do file to merge baseline and 6-week data 
-	
 	run "$dofiledir/6Week_Merge.do"
-	cd $datadir
 
 * Load data
-	
-	use "`COHORT'_6W_Merged_$date.dta", clear
-
+	use "$datadir/`COHORT'_6W_Merged_$date.dta", clear
+	cd $output
 
 * Generate strata
 	drop strata
@@ -86,17 +83,17 @@ Things to adjust for:
 	label define responselist 0 "Not complete" 1 "Complete"
 	label val sw_responserate responselist
 
-	tabout sw_responserate if baseline_status!=3 using "$output/Thesis_output_$date.xls", replace cells(freq col) h2("6W response rate") f(0 1) clab(n %)
+	tabout sw_responserate if baseline_status!=3 using "Thesis_output_$date.xls", replace cells(freq col) h2("6W response rate") f(0 1) clab(n %)
 
-* Baseline response rate among pregnant and5-9 weeks postpartum women
+* Baseline response rate among pregnant and 5-9 weeks postpartum women
 	gen responserate=0 if FRS_>=1 & FRS_<6 & FRS_!=. & baseline_status==3
 	replace responserate=1 if FRS_result==1 & baseline_status==3
 	label val responserate responselist
 	
-	tabout responserate if baseline_status==3 using "$output/Thesis_output_$date.xls", replace cells(freq col) h2("Basline response rate") f(0 1) clab(n %)
+	tabout responserate if baseline_status==3 using "Thesis_output_$date.xls", replace cells(freq col) h2("Basline response rate") f(0 1) clab(n %)
 
 * Regional breakdown of the women
-	tabout region if FRS_result==1 | SWresult==1 using "$output/Thesis_output_$date.xls", append cells(freq col) h2("Number of Women by Region") f(0 1) clab(n %) 
+	tabout region if FRS_result==1 | SWresult==1 using "Thesis_output_$date.xls", append cells(freq col) h2("Number of Women by Region") f(0 1) clab(n %) 
 
 * Source of the data 
 	gen source=1 if FRS_result!=.
@@ -106,7 +103,7 @@ Things to adjust for:
 	label define source_list 1 "Baseline (5-9 wks pp at baseline)" 2 "6-Week pre-COVID" 3 "6-Week during COVID"
 	label val source source_list
 
-	tabout source if FRS_result==1 | SWresult==1 using "$output/Thesis_output_$date.xls", append cells(freq col) h2("Source of 6-Week Data-Complete forms") f(0 1) clab(n %) 
+	tabout source if FRS_result==1 | SWresult==1 using "Thesis_output_$date.xls", append cells(freq col) h2("Source of 6-Week Data-Complete forms") f(0 1) clab(n %) 
 
 * Restrict analysis to women who completed questionnaire 
 	keep if (FRS_result==1 & baseline_status==3) | (SWresult==1 & baseline_status!=3)
@@ -342,23 +339,23 @@ Things to adjust for:
 
 * Tabulation of outcome and potential confounders
 * Background characteristics
-	tabout SWdelivprob_convuls age_cat [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls education [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls urban [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls married [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls parity4 [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls unintended_preg [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls age_cat [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls education [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls urban [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls married [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls parity4 [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls unintended_preg [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
 
 
 * ANC and delivery care 
-	tabout SWdelivprob_convuls anyanc [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls ANC4 [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls anc_key_services [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls anc_birth_readiness_b [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls preg_comp [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls facility_deliv [aw=SWweight] using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls skilled_birth [aw=SWweight]  using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
-	tabout SWdelivprob_convuls SWcaesarean_delivery [aw=SWweight]  using "$output/Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls anyanc [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls ANC4 [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls anc_key_services [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls anc_birth_readiness_b [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls preg_comp [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls facility_deliv [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls skilled_birth [aw=SWweight]  using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+	tabout SWdelivprob_convuls SWcaesarean_delivery [aw=SWweight]  using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
 
 
 * Lowess smoothed regressions -- continuous Xs
