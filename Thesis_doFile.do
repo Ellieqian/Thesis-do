@@ -401,26 +401,27 @@ graph box ga_first_anc if provider_code!=0, name(ga_provider,replace) over(provi
 		graph export graphs/ga_provider.png, replace
 	
 * Table 1
+*/
 
 #delimit;
 table1_mc,  			
 	by(SWdelivprob_convuls) 			
 	vars( 						
 	age_cat cat %4.1f \
-	education cat %4.1f \
 	urban bin %4.1f \
+	education cat %4.1f \
+	wealthquintile cat %4.1f \
 	parity4 cat %4.1f \
 	unintended_preg bin %4.1f \
-	facility_deliv bin %4.1f \
-	skilled_birth bin %4.1f \
+	facility_skilled cat %4.1f \
 	preg_comp bin %4.1f \
-	provider_code cat %4.1f \
+	anc_num_cat cat %4.1f \
 	) 
 	nospace onecol 
-	saving(tables/table1_$date.xlsx, replace) // save table 1
+	saving(Tables/table1_$date.xlsx, replace) // save table 1
 ;
 #delimit cr
-*/
+
 *=========================================================
 * Logistic regression *
 *=========================================================
@@ -429,7 +430,7 @@ table1_mc,
 svy: logistic SWdelivprob_convuls i.anc_num_cat i.facility_skilled i.age_cat urban preg_comp
 svy: logistic SWdelivprob_convuls i.anc_num_cat i.facility_skilled i.age_cat urban if preg_comp==1  //unintended_preg married i.education
  
-assert 0
+/*
 svy: logistic SWdelivprob_convuls i.provider_code i.facility_skilled i.age_cat urban preg_comp   //unintended_preg married i.education
 svy: logistic SWdelivprob_convuls i.provider_code i.facility_skilled i.age_cat urban if preg_comp==1   //unintended_preg married i.education
 
@@ -447,12 +448,7 @@ svy: logistic pe_no_e i.provider_code i.facility_skilled  i.age_cat urban
 svy: logistic pe_no_e i.anc_num_cat i.facility_skilled  i.age_cat urban 
 
 // compared to those who had pe & e, those who had pe but no e have a 2.8-fold increase in the odds of seeking care from both a HEW and PHCP //
-
-/*
-	NOTE: 
-		Among those who had pre-eclampsia danger signs but did not have eclampsia,
-		a much higher proportion sought care 
-
 */
+
 
 log close
