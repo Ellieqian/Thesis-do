@@ -1,9 +1,30 @@
+
+#delimit;
+table1_mc,  			
+by(SWdelivprob_convuls) 			
+vars( 						
+age_cat cat %4.1f \
+urban bin %4.1f \
+education cat %4.1f \
+wealthquintile cat %4.1f \
+parity4 cat %4.1f \
+unintended_preg bin %4.1f \
+facility_skilled cat %4.1f \
+preg_comp bin %4.1f \
+anc_num_cat cat %4.1f \
+) 
+nospace onecol 
+saving(Tables/table1_$date.xlsx, replace) // save table 1
+;
+#delimit cr
+
+
 *** Archive code for LR among ANC recipients *** 
 
 *** Among ANC recipients *** 
 
 * ANC provider type
-svy: logistic SWdelivprob_convuls i.provider_code if anyanc==1 
+svy: logistic SWdelivprob_convuls i.provider_code if preg_comp==1 
 mat temp = r(table)'
 mat results = temp[2..., "b"], temp[2..., "ll"], temp[2..., "ul"], temp[2..., "pvalue"]
 matrix rownames results = PHCP both _cons
@@ -15,7 +36,7 @@ putexcel F60 = `e(N)', hcenter bold overwritefmt
 putexcel A61 = matrix(results), names nformat(number_d2)
 
 * Maternal assessment at ANC 
-svy: logistic SWdelivprob_convuls maternal_assess_all if anyanc==1
+svy: logistic SWdelivprob_convuls maternal_assess_all if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -26,7 +47,7 @@ putexcel E68 = "N = ", right bold overwritefmt
 putexcel F68 = `e(N)', hcenter bold overwritefmt
 putexcel A69 = matrix(results), names nformat(number_d2)
 
-svy: logistic SWdelivprob_convuls i.maternal_assess_cat if anyanc==1
+svy: logistic SWdelivprob_convuls i.maternal_assess_cat if preg_comp==1
 mat temp = r(table)'
 mat results = temp[2..., "b"], temp[2..., "ll"], temp[2..., "ul"], temp[2..., "pvalue"]
 matrix rownames results = 1-3 4 5 _cons
@@ -38,7 +59,7 @@ putexcel F74 = `e(N)', hcenter bold overwritefmt
 putexcel A75 = matrix(results), names nformat(number_d2)
 
 * BP measurement alone
-svy: logistic SWdelivprob_convuls SWanc_bp if anyanc==1
+svy: logistic SWdelivprob_convuls SWanc_bp if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -50,7 +71,7 @@ putexcel F82 = `e(N)', hcenter bold overwritefmt
 putexcel A83 = matrix(results), names nformat(number_d2)
 
 * Weight measurement alone
-svy: logistic SWdelivprob_convuls SWanc_weight if anyanc==1
+svy: logistic SWdelivprob_convuls SWanc_weight if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -62,7 +83,7 @@ putexcel F88 = `e(N)', hcenter bold overwritefmt
 putexcel A89 = matrix(results), names nformat(number_d2)
 
 * Urine test alone
-svy: logistic SWdelivprob_convuls SWanc_urine if anyanc==1
+svy: logistic SWdelivprob_convuls SWanc_urine if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -75,7 +96,7 @@ putexcel A95 = matrix(results), names nformat(number_d2)
 
 * Birth readiness discussion 
 * Categorical 
-svy: logistic SWdelivprob_convuls i.birth_readiness_cat if anyanc==1
+svy: logistic SWdelivprob_convuls i.birth_readiness_cat if preg_comp==1
 mat temp = r(table)'
 mat results = temp[2..., "b"], temp[2..., "ll"], temp[2..., "ul"], temp[2..., "pvalue"]
 matrix rownames results = 1-3 4 5 _cons
@@ -87,7 +108,7 @@ putexcel F100 = `e(N)', hcenter bold overwritefmt
 putexcel A101 = matrix(results), names nformat(number_d2)
 
 * Binary 
-svy: logistic SWdelivprob_convuls birth_readiness_all if anyanc==1
+svy: logistic SWdelivprob_convuls birth_readiness_all if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -99,7 +120,7 @@ putexcel F108 = `e(N)', hcenter bold overwritefmt
 putexcel A109 = matrix(results), names nformat(number_d2)
 
 * PE-related danger sign counseling
-svy: logistic SWdelivprob_convuls danger_sign_coun if anyanc==1
+svy: logistic SWdelivprob_convuls danger_sign_coun if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -111,7 +132,7 @@ putexcel F114 = `e(N)', hcenter bold overwritefmt
 putexcel A115 = matrix(results), names nformat(number_d2)
 
 * Nutrition counseling
-svy: logistic SWdelivprob_convuls SWanc_nd_info_yn if anyanc==1
+svy: logistic SWdelivprob_convuls SWanc_nd_info_yn if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
@@ -124,7 +145,7 @@ putexcel A121 = matrix(results), names nformat(number_d2)
 
 * Tetanus injection
 recode SWanc_tt_inject(. -88 -99 = 0)
-svy: logistic SWdelivprob_convuls SWanc_tt_inject if anyanc==1
+svy: logistic SWdelivprob_convuls SWanc_tt_inject if preg_comp==1
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "ll"], temp[1..., "ul"], temp[1..., "pvalue"]
 matrix rownames results = Yes _cons
