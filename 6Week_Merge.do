@@ -12,13 +12,17 @@ This .do file takes the deidentified recoded 6-week data from PMA Ethiopia and m
 *******************************************************************************
 * SET MACROS 
 *******************************************************************************
+local today=c(current_date)
+local c_today= "`today'"
+global date=subinstr("`c_today'", " ", "",.)
 
 *Year Macros
 	local COHORT Cohort1 
 
 * Set macros for data sets
-	local baselinedata "/Users/Ellie/Dropbox/PMAET2_Datasets/1-Cohort1/1-Baseline/Prelim100/Cohort1_Baseline_WealthWeightAll_3Nov2020.dta"
-	local sixweekdata "/Users/Ellie/Dropbox/PMAET2_Datasets/1-Cohort1/2-6Week/95Prelim/Cohort1_NoName_6W_Clean_7Dec2020.dta"
+	local baselinedata "/Users/Ellie/Dropbox (Gates Institute)/PMAET2_Datasets/1-Cohort1/1-Baseline/Prelim100/Cohort1_Baseline_WealthWeightAll_3Nov2020.dta"
+	local sixweekdata  "/Users/Ellie/Dropbox (Gates Institute)/PMAET2_Datasets/1-Cohort1/2-6Week/Prelim100/Cohort1_NoName_6W_Clean_27Jan2021.dta"
+
 	global datadir "/Users/Ellie/Desktop/THESIS/Data"
 
 *******************************************************************************
