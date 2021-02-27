@@ -1,3 +1,74 @@
+*** GA at first ANC visit ***
+* Generate GA at first visit variable
+recode SWanc_phcp_timing(0 = 1)
+recode SWanc_hew_timing(0 = 1)
+gen ga_first_anc=SWanc_hew_timing
+replace ga_first_anc=SWanc_phcp_timing if SWanc_phcp_timing<anc_hew_timing & SWanc_phcp_timing!=.
+replace ga_first_anc=. if SWanc_hew_timing==. & SWanc_phcp_timing==.
+replace ga_first_anc=. if anyanc==0
+label var ga_first_anc "GA (in months) at first ANC"
+
+* Create categories 
+gen ga_first_anc_cat=0
+replace ga_first_anc_cat=1 if ga_first_anc<4 & ga_first_anc>=1 
+replace ga_first_anc_cat=2 if ga_first_anc>=4 & ga_first_anc<=6 
+replace ga_first_anc_cat=3 if ga_first_anc>6 & ga_first_anc<=9 
+replace ga_first_anc_cat=4 if ga_first_anc==.
+replace ga_first_anc_cat=0 if anyanc==0
+label define ga_anc_l 0 "No ANC" 1 "First trimester" 2 "Second trimester" 3 "Third trimester" 4 "Missing ANC timing"
+label val ga_first_anc_cat ga_anc_l
+tab ga_first_anc_cat
+
+gen maternal_assess_score=SWanc_bp + SWanc_weight + SWanc_urine + SWanc_blood + SWanc_stool
+replace maternal_assess_score=0 if anyanc==0
+
+gen maternal_assess_cat=0 
+replace maternal_assess_cat=1 if maternal_assess_score>=1 & maternal_assess_score<=3
+replace maternal_assess_cat=2 if maternal_assess_score==4
+replace maternal_assess_cat=3 if maternal_assess_score==5
+replace maternal_assess_cat=0 if anyanc==0
+label define maternal_assess_cat 0 "None" 1 "1-3 assessments" 2 "4 assessments" 3 "All 5 assessments"
+label val maternal_assess_cat maternal_assess_cat
+
+
+* Generate binary composite birth/complication readiness indicator
+gen birth_readiness_all=0
+replace birth_readiness_all=1 if (SWanc_delivery_place==1 & SWanc_delivery_skilled==1 & ///
+									SWanc_emergency_transport==1 & SWanc_danger_place==1 & ///
+									SWanc_danger_migraine==1 & SWanc_danger_hbp==1 & SWanc_danger_edema==1 & ///
+									SWanc_danger_convuls==1 & SWanc_danger_bleeding==1) & anyanc==1
+label var birth_readiness_all "At ANC discussed all birth/complication readiness topics"
+label val birth_readiness_all yesno
+
+
+gen birth_readiness_c=SWanc_delivery_place + SWanc_delivery_skilled + SWanc_emergency_transport + SWanc_danger_place + ///
+						SWanc_danger_migraine + SWanc_danger_hbp + SWanc_danger_edema + SWanc_danger_convuls + SWanc_danger_bleeding
+								
+gen birth_readiness_cat=0
+replace birth_readiness_cat=1 if birth_readiness_c<=3 & birth_readiness_c>=1 
+replace birth_readiness_cat=2 if birth_readiness_c>3 & birth_readiness_c<=6 
+replace birth_readiness_cat=3 if birth_readiness_c>6 & birth_readiness_c<=9 
+replace birth_readiness_cat=0 if anyanc==0
+label var birth_readiness_cat "Birth readiness discussion (categorial)"
+label define birthl 0 "None" 1 "1-3 topics" 2 "4-6 topics" 3 "7-9 topics"
+label val birth_readiness_cat birthl
+
+
+* All 5 assessments
+gen maternal_assess_all=0
+replace maternal_assess_all=1 if (SWanc_bp==1 & SWanc_weight==1 & SWanc_urine==1 & SWanc_blood==1 & SWanc_stool==1)
+label var maternal_assess_all "Received all 5 maternal assessments"
+label val maternal_assess_all yesno
+tab maternal_assess_all
+
+* Key ANC services binary indicators 
+gen anc_key_services=0 
+replace anc_key_services=1 if (SWanc_bp==1 & SWanc_iron==1 & SWanc_blood==1 & ///
+								SWanc_urine==1 & SWanc_syph_test==1 & SWanc_hiv_test==1) 
+label var anc_key_services "At ANC had : BP, urine and blood sampled, tested for syphilis & HIV, + took iron during preg"
+label val anc_key_services yesno
+
+
 
 #delimit;
 table1_mc,  			
@@ -155,3 +226,650 @@ putexcel A125 = "Tetanus injection at ANC", bold overwritefmt
 putexcel E126 = "N = ", right bold overwritefmt
 putexcel F126 = `e(N)', hcenter bold overwritefmt
 putexcel A127 = matrix(results), names nformat(number_d2)
+
+
+
+*======================================================*
+* Among women who were pregnancy at enrollment  * 
+*======================================================*
+
+*** ANC Frequency *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_num_cat if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H1 = "Adjusted logistic regression results among women who were pregnancy at enrollment", bold overwritefmt
+putexcel H3 = "ANC Frequency", bold overwritefmt
+putexcel L4 = "N = ", right bold overwritefmt
+putexcel M4 = `e(N)', hcenter bold overwritefmt
+putexcel H5 = matrix(results), names nformat(number_d2)
+
+*** ANC provider type *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.provider_code if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H23 = "ANC Provider Type", bold overwritefmt
+putexcel L24 = "N = ", right bold overwritefmt
+putexcel M24 = `e(N)', hcenter bold overwritefmt
+putexcel H25 = matrix(results), names nformat(number_d2)
+
+*** Maternal assessment at ANC *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.maternal_assess_cat if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H44 = "Maternal assessment (categorial)", bold overwritefmt
+putexcel L45 = "N = ", right bold overwritefmt
+putexcel M45 = `e(N)', hcenter bold overwritefmt
+putexcel H46 = matrix(results), names nformat(number_d2)
+
+*** All maternal assessment *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled maternal_assess_all if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H65 = "Received all 5 maternal assessments", bold overwritefmt
+putexcel L66 = "N = ", right bold overwritefmt
+putexcel M66 = `e(N)', hcenter bold overwritefmt
+putexcel H67 = matrix(results), names nformat(number_d2)
+
+*** PE/E danger sign counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled danger_sign_coun if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H83 = "PE/E danger sign counseling", bold overwritefmt
+putexcel L84 = "N = ", right bold overwritefmt
+putexcel M84 = `e(N)', hcenter bold overwritefmt
+putexcel H85 = matrix(results), names nformat(number_d2)
+
+*** Birth readiness discussion *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.birth_readiness_cat if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H100 = "Birth readiness discussion (categorical)", bold overwritefmt
+putexcel L101 = "N = ", right bold overwritefmt
+putexcel M101 = `e(N)', hcenter bold overwritefmt
+putexcel H102 = matrix(results), names nformat(number_d2)
+
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled birth_readiness_all if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H122 = "Received all 9 birth readiness discussions", bold overwritefmt
+putexcel L123 = "N = ", right bold overwritefmt
+putexcel M123 = `e(N)', hcenter bold overwritefmt
+putexcel H124 = matrix(results), names nformat(number_d2)
+
+*** Nutritional counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_nd_info_yn if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H140 = "Nutritional counseling", bold overwritefmt
+putexcel L141 = "N = ", right bold overwritefmt
+putexcel M141 = `e(N)', hcenter bold overwritefmt
+putexcel H142= matrix(results), names nformat(number_d2)
+
+*** Tetanus injection *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_tt_inject if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H158 = "Tetanus injection", bold overwritefmt
+putexcel L159 = "N = ", right bold overwritefmt
+putexcel M159 = `e(N)', hcenter bold overwritefmt
+putexcel H160 = matrix(results), names nformat(number_d2)
+
+*** BP measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_bp if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H176 = "BP measurement at ANC", bold overwritefmt
+putexcel L177 = "N = ", right bold overwritefmt
+putexcel M177 = `e(N)', hcenter bold overwritefmt
+putexcel H178= matrix(results), names nformat(number_d2)
+
+*** Weight measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_weight if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H194 = "Weight measurement at ANC", bold overwritefmt
+putexcel L195 = "N = ", right bold overwritefmt
+putexcel M195 = `e(N)', hcenter bold overwritefmt
+putexcel H196= matrix(results), names nformat(number_d2)
+
+*** Urine test*** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_urine if select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel H212 = "Urine test at ANC", bold overwritefmt
+putexcel L213 = "N = ", right bold overwritefmt
+putexcel M213 = `e(N)', hcenter bold overwritefmt
+putexcel H214= matrix(results), names nformat(number_d2)
+
+*======================================================*
+* Excluding 5-9 postpartum women * 
+*======================================================*
+
+*** ANC Frequency *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_num_cat if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O1 = "Adjusted logistic regression results excluding 5-9 postpartum women", bold overwritefmt
+putexcel O3 = "ANC Frequency", bold overwritefmt
+putexcel S4 = "N = ", right bold overwritefmt
+putexcel T4 = `e(N)', hcenter bold overwritefmt
+putexcel O5 = matrix(results), names nformat(number_d2)
+
+*** ANC provider type *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.provider_code if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O23 = "ANC Provider Type", bold overwritefmt
+putexcel S24 = "N = ", right bold overwritefmt
+putexcel T24 = `e(N)', hcenter bold overwritefmt
+putexcel O25 = matrix(results), names nformat(number_d2)
+
+*** Maternal assessment at ANC *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.maternal_assess_cat if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O44 = "Maternal assessment (categorial)", bold overwritefmt
+putexcel S45 = "N = ", right bold overwritefmt
+putexcel T45 = `e(N)', hcenter bold overwritefmt
+putexcel O46 = matrix(results), names nformat(number_d2)
+
+*** All maternal assessment *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled maternal_assess_all if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O65 = "Received all 5 maternal assessments", bold overwritefmt
+putexcel S66 = "N = ", right bold overwritefmt
+putexcel T66 = `e(N)', hcenter bold overwritefmt
+putexcel O67 = matrix(results), names nformat(number_d2)
+
+*** PE/E danger sign counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled danger_sign_coun if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O83 = "PE/E danger sign counseling", bold overwritefmt
+putexcel S84 = "N = ", right bold overwritefmt
+putexcel T84 = `e(N)', hcenter bold overwritefmt
+putexcel O85 = matrix(results), names nformat(number_d2)
+
+*** Birth readiness discussion *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.birth_readiness_cat if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O100 = "Birth readiness discussion (categorical)", bold overwritefmt
+putexcel S101 = "N = ", right bold overwritefmt
+putexcel T101 = `e(N)', hcenter bold overwritefmt
+putexcel O102 = matrix(results), names nformat(number_d2)
+
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled birth_readiness_all if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O122 = "Received all 9 birth readiness discussions", bold overwritefmt
+putexcel S123 = "N = ", right bold overwritefmt
+putexcel T123 = `e(N)', hcenter bold overwritefmt
+putexcel O124 = matrix(results), names nformat(number_d2)
+
+*** Nutritional counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_nd_info_yn if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O140 = "Nutritional counseling", bold overwritefmt
+putexcel S141 = "N = ", right bold overwritefmt
+putexcel T141 = `e(N)', hcenter bold overwritefmt
+putexcel O142= matrix(results), names nformat(number_d2)
+
+*** Tetanus injection *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_tt_inject if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O158 = "Tetanus injection", bold overwritefmt
+putexcel S159 = "N = ", right bold overwritefmt
+putexcel T159 = `e(N)', hcenter bold overwritefmt
+putexcel O160 = matrix(results), names nformat(number_d2)
+
+*** BP measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_bp if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O176 = "BP measurement at ANC", bold overwritefmt
+putexcel S177 = "N = ", right bold overwritefmt
+putexcel T177 = `e(N)', hcenter bold overwritefmt
+putexcel O178= matrix(results), names nformat(number_d2)
+
+*** Weight measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_weight if select & baseline_status!=3
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O194 = "Weight measurement at ANC", bold overwritefmt
+putexcel S195 = "N = ", right bold overwritefmt
+putexcel T195 = `e(N)', hcenter bold overwritefmt
+putexcel O196= matrix(results), names nformat(number_d2)
+
+*** Urine test*** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled SWanc_urine if select & baseline_status!=3 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel O212 = "Urine test at ANC", bold overwritefmt
+putexcel S213 = "N = ", right bold overwritefmt
+putexcel T213 = `e(N)', hcenter bold overwritefmt
+putexcel O214= matrix(results), names nformat(number_d2)
+
+
+
+*==================================================================*
+* Among women who were pregnancy at enrollment and had sign of PE* 
+*==================================================================*
+
+*** ANC Frequency *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.anc_num_cat if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H1 = "Adjusted logistic regression results among women who were pregnancy at enrollment and had PE signs", bold overwritefmt
+putexcel H3 = "ANC Frequency", bold overwritefmt
+putexcel L4 = "N = ", right bold overwritefmt
+putexcel M4 = `e(N)', hcenter bold overwritefmt
+putexcel H5 = matrix(results), names nformat(number_d2)
+
+*** ANC provider type *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.provider_code if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H23 = "ANC Provider Type", bold overwritefmt
+putexcel L24 = "N = ", right bold overwritefmt
+putexcel M24 = `e(N)', hcenter bold overwritefmt
+putexcel H25 = matrix(results), names nformat(number_d2)
+
+*** Maternal assessment at ANC *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.maternal_assess_cat if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H44 = "Maternal assessment (categorial)", bold overwritefmt
+putexcel L45 = "N = ", right bold overwritefmt
+putexcel M45 = `e(N)', hcenter bold overwritefmt
+putexcel H46 = matrix(results), names nformat(number_d2)
+
+*** All maternal assessment *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled maternal_assess_all if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H65 = "Received all 5 maternal assessments", bold overwritefmt
+putexcel L66 = "N = ", right bold overwritefmt
+putexcel M66 = `e(N)', hcenter bold overwritefmt
+putexcel H67 = matrix(results), names nformat(number_d2)
+
+*** PE/E danger sign counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled danger_sign_coun if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H83 = "PE/E danger sign counseling", bold overwritefmt
+putexcel L84 = "N = ", right bold overwritefmt
+putexcel M84 = `e(N)', hcenter bold overwritefmt
+putexcel H85 = matrix(results), names nformat(number_d2)
+
+*** Birth readiness discussion *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.birth_readiness_cat if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H100 = "Birth readiness discussion (categorical)", bold overwritefmt
+putexcel L101 = "N = ", right bold overwritefmt
+putexcel M101 = `e(N)', hcenter bold overwritefmt
+putexcel H102 = matrix(results), names nformat(number_d2)
+
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled birth_readiness_all if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H122 = "Received all 9 birth readiness discussions", bold overwritefmt
+putexcel L123 = "N = ", right bold overwritefmt
+putexcel M123 = `e(N)', hcenter bold overwritefmt
+putexcel H124 = matrix(results), names nformat(number_d2)
+
+*** Nutritional counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_nd_info_yn if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H140 = "Nutritional counseling", bold overwritefmt
+putexcel L141 = "N = ", right bold overwritefmt
+putexcel M141 = `e(N)', hcenter bold overwritefmt
+putexcel H142= matrix(results), names nformat(number_d2)
+
+*** Tetanus injection *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_tt_inject if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H158 = "Tetanus injection", bold overwritefmt
+putexcel L159 = "N = ", right bold overwritefmt
+putexcel M159 = `e(N)', hcenter bold overwritefmt
+putexcel H160 = matrix(results), names nformat(number_d2)
+
+*** BP measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_bp if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H176 = "Blood pressure measurement at ANC", bold overwritefmt
+putexcel L177 = "N = ", right bold overwritefmt
+putexcel M177 = `e(N)', hcenter bold overwritefmt
+putexcel H178 = matrix(results), names nformat(number_d2)
+
+*** Weight measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_weight if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H194 = "Weight measurement at ANC", bold overwritefmt
+putexcel L195 = "N = ", right bold overwritefmt
+putexcel M195 = `e(N)', hcenter bold overwritefmt
+putexcel H196 = matrix(results), names nformat(number_d2)
+
+*** Urine test *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_urine if preg_comp==1 & select & baseline_status==1 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel H212 = "Urine test at ANC", bold overwritefmt
+putexcel L213 = "N = ", right bold overwritefmt
+putexcel M213 = `e(N)', hcenter bold overwritefmt
+putexcel H214 = matrix(results), names nformat(number_d2)
+
+
+*==================================================================*
+* Among women with PE, exclusing 5-9 weeks postpartum women * 
+*==================================================================*
+
+*** ANC Frequency *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.anc_num_cat if preg_comp==1 & select & baseline_status!=3 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O1 = "Adjusted logistic regression results among with PE, exclusing 5-9 weeks postpartum women", bold overwritefmt
+putexcel O3 = "ANC Frequency", bold overwritefmt
+putexcel S4 = "N = ", right bold overwritefmt
+putexcel T4 = `e(N)', hcenter bold overwritefmt
+putexcel O5 = matrix(results), names nformat(number_d2)
+
+*** ANC provider type *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.provider_code if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O23 = "ANC Provider Type", bold overwritefmt
+putexcel S24 = "N = ", right bold overwritefmt
+putexcel T24 = `e(N)', hcenter bold overwritefmt
+putexcel O25 = matrix(results), names nformat(number_d2)
+
+*** Maternal assessment at ANC *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.maternal_assess_cat if preg_comp==1 & select & baseline_status!=3 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O44 = "Maternal assessment (categorial)", bold overwritefmt
+putexcel S45 = "N = ", right bold overwritefmt
+putexcel T45 = `e(N)', hcenter bold overwritefmt
+putexcel O46 = matrix(results), names nformat(number_d2)
+
+*** All maternal assessment *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled maternal_assess_all if preg_comp==1 & select & baseline_status!=3 
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O65 = "Received all 5 maternal assessments", bold overwritefmt
+putexcel S66 = "N = ", right bold overwritefmt
+putexcel T66 = `e(N)', hcenter bold overwritefmt
+putexcel O67 = matrix(results), names nformat(number_d2)
+
+*** PE/E danger sign counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled danger_sign_coun if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O83 = "PE/E danger sign counseling", bold overwritefmt
+putexcel S84 = "N = ", right bold overwritefmt
+putexcel T84 = `e(N)', hcenter bold overwritefmt
+putexcel O85 = matrix(results), names nformat(number_d2)
+
+*** Birth readiness discussion *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.birth_readiness_cat if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O100 = "Birth readiness discussion (categorical)", bold overwritefmt
+putexcel S101 = "N = ", right bold overwritefmt
+putexcel T101 = `e(N)', hcenter bold overwritefmt
+putexcel O102 = matrix(results), names nformat(number_d2)
+
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled birth_readiness_all if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O122 = "Received all 9 birth readiness discussions", bold overwritefmt
+putexcel S123 = "N = ", right bold overwritefmt
+putexcel T123 = `e(N)', hcenter bold overwritefmt
+putexcel O124 = matrix(results), names nformat(number_d2)
+
+*** Nutritional counseling *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_nd_info_yn if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O140 = "Nutritional counseling", bold overwritefmt
+putexcel S141 = "N = ", right bold overwritefmt
+putexcel T141 = `e(N)', hcenter bold overwritefmt
+putexcel O142= matrix(results), names nformat(number_d2)
+
+*** Tetanus injection *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_tt_inject if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O158 = "Tetanus injection", bold overwritefmt
+putexcel S159 = "N = ", right bold overwritefmt
+putexcel T159 = `e(N)', hcenter bold overwritefmt
+putexcel O160 = matrix(results), names nformat(number_d2)
+
+
+*** BP measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_bp if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O176 = "Blood pressure measurement at ANC", bold overwritefmt
+putexcel S177 = "N = ", right bold overwritefmt
+putexcel T177 = `e(N)', hcenter bold overwritefmt
+putexcel O178 = matrix(results), names nformat(number_d2)
+
+*** Weight measurement *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_weight if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O194 = "Weight measurement at ANC", bold overwritefmt
+putexcel S195 = "N = ", right bold overwritefmt
+putexcel T195 = `e(N)', hcenter bold overwritefmt
+putexcel O196 = matrix(results), names nformat(number_d2)
+
+*** Urine test *** 
+
+svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled SWanc_urine if preg_comp==1 & select & baseline_status!=3  
+mat temp = r(table)'
+mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
+mat list results
+matrix colnames results = OR P-value CI-lower CI-upper
+putexcel set Regression_output_$date.xlsx, sheet(adjusted-all-PE) modify
+putexcel O212 = "Urine test at ANC", bold overwritefmt
+putexcel S213 = "N = ", right bold overwritefmt
+putexcel T213 = `e(N)', hcenter bold overwritefmt
+putexcel O214 = matrix(results), names nformat(number_d2)
+
