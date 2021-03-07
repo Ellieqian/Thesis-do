@@ -254,39 +254,38 @@ label val provider_code providerl
 gen anc_place=0 if anyanc==0
 replace anc_place=1 if anyanc==1 & ///
 						provider_code==1 | ///
-						((SWanc_phcp_place=="nowhere" | SWanc_phcp_place=="her_home") & provider_code==3)
+						(SWanc_phcp_place=="nowhere" & provider_code==3) | ///
+						((SWanc_phcp_place=="her_home" | SWanc_phcp_place=="other_home") & ///
+						(provider_code==2 | provider_code==3))
 						
 /* 	Women who reported receiving ANC from both HEW and PHCP but reported "nowhere" or "her home" for the place of ANC
 	were coded to have received care from HEW.
 	Since very few women received care from HEW at home only, HEW at home and HEW at HF are grouped together.
 
 */
-
-/*
-replace anc_place=2 if anyanc==1 & ///
-						(SWanc_hew_place=="gov_hp" | SWanc_hew_place =="gov_hp other" | ///
-						SWanc_hew_place =="gov_hp other_hf" | SWanc_hew_place =="home gov_hp" | SWanc_hew_place == "home gov_hp other_hf" | ///
-						SWanc_hew_place =="other_hf") & ///
-						provider_code==1 */
 				
 replace anc_place=2 if anyanc==1 & ///
-						(SWanc_phcp_place=="gov_hc" | SWanc_phcp_place=="gov_hc gov_hp" | SWanc_phcp_place=="her_home gov_hc" | ///
-						SWanc_phcp_place=="gov_hc ngo_hf" | SWanc_phcp_place=="gov_hc other " | SWanc_phcp_place=="gov_hc other_priv" | SWanc_phcp_place=="gov_hc other_pub" | ///
-						SWanc_phcp_place=="gov_hp" | SWanc_phcp_place=="ngo_hf" | SWanc_phcp_place=="other_priv" | SWanc_phcp_place=="other_pub") & ///
+						(SWanc_phcp_place=="gov_hc" | SWanc_phcp_place=="gov_hc gov_hp" | ///
+						SWanc_phcp_place=="gov_hc ngo_hf" | SWanc_phcp_place=="gov_hc other " | ///
+						SWanc_phcp_place=="gov_hc other_priv" | SWanc_phcp_place=="gov_hc other_pub" | ///
+						SWanc_phcp_place=="gov_hp" | SWanc_phcp_place=="ngo_hf" | ///
+						SWanc_phcp_place=="other_priv" | SWanc_phcp_place=="other_pub") & ///
 						(provider_code==2 | provider_code==3)
 		
 replace anc_place=3 if anyanc==1 & ///	
 						(SWanc_phcp_place=="gov_hc gov_hp priv_hosp" | SWanc_phcp_place=="gov_hc priv_hosp" | ///
-						SWanc_phcp_place=="gov_hc priv_hosp other" | SWanc_phcp_place=="gov_hosp" | SWanc_phcp_place=="gov_hosp gov_hc" | ///
-						SWanc_phcp_place=="gov_hosp gov_hc gov_hp" | SWanc_phcp_place=="gov_hosp gov_hc other" | SWanc_phcp_place=="gov_hosp gov_hc priv_hosp" | ///
-						SWanc_phcp_place=="gov_hosp gov_hc priv_hosp ngo_hf" | SWanc_phcp_place=="gov_hosp gov_hp" | SWanc_phcp_place=="gov_hosp ngo_hf" | ///
-						SWanc_phcp_place=="gov_hosp other_priv" | SWanc_phcp_place=="gov_hosp other_pub" | SWanc_phcp_place=="gov_hosp priv_hosp" | ///
-						SWanc_phcp_place=="gov_hp priv_hosp" | SWanc_phcp_place=="priv_hosp" | SWanc_phcp_place=="priv_hosp ngo_hf" | SWanc_phcp_place=="priv_hosp other_priv") & ///
+						SWanc_phcp_place=="gov_hc priv_hosp other" | SWanc_phcp_place=="gov_hosp" | ///
+						SWanc_phcp_place=="gov_hosp gov_hc" | SWanc_phcp_place=="gov_hosp gov_hc gov_hp" | ///
+						SWanc_phcp_place=="gov_hosp gov_hc other" | SWanc_phcp_place=="gov_hosp gov_hc priv_hosp" | ///
+						SWanc_phcp_place=="gov_hosp gov_hc priv_hosp ngo_hf" | SWanc_phcp_place=="gov_hosp ngo_hf" | ///
+						SWanc_phcp_place=="gov_hosp other_priv" | SWanc_phcp_place=="gov_hosp other_pub" | ///
+						SWanc_phcp_place=="gov_hosp priv_hosp" | SWanc_phcp_place=="gov_hp priv_hosp" | ///
+						SWanc_phcp_place=="priv_hosp" | SWanc_phcp_place=="priv_hosp ngo_hf" | SWanc_phcp_place=="priv_hosp other_priv") & ///
 						(provider_code==2 | provider_code==3)
 													
-label define anc_placel 0 "No ANC" 1 "HEW (home or HF)" 2 "PHCP at HF" 3 "PHCP at hospital"
+label define anc_placel 0 "No ANC" 1 "HEW" 2 "PHCP at HF" 3 "PHCP at hospital"
 label val anc_place anc_placel
-tab anc_place
+tab anc_place, m
 
 * Generate GA at first visit variable
 recode SWanc_phcp_timing(0 = 1)
@@ -322,7 +321,10 @@ replace danger_sign_coun=2 if (SWanc_danger_migraine==1 | anc_danger_hbp==1 | an
 label var danger_sign_coun "Have at least one PE/E danger sign counseling at ANC"
 label define dangerl 0 "No ANC" 1 "Did not receive any danger sign counseling" 2 "Received danger sign counseling at ANC"
 label val danger_sign_coun dangerl
-tab danger_sign_coun, m
+tab danger_sign_coun
+
+gen danger_sign_coun1=0 
+replace danger_sign_coun1=1 if (SWanc_danger_migraine==1 | anc_danger_hbp==1 | anc_danger_edema==1 | SWanc_danger_convuls==1) & anyanc==1
 
 * Blood pressure
 gen bp=0 if anyanc==0
@@ -372,12 +374,7 @@ tab iron
 * Receiving all content and content score variables 
 gen all_content=0 if anyanc==0
 replace all_content=1 if anyanc==1
-replace all_content=2 if (SWanc_tt_inject==1 & SWanc_bp==1 &  SWanc_blood==1 &  SWanc_urine==1 & danger_sign_coun==1 & SWanc_iron==1) & anyanc==1
-
-gen content_score=0 if anyanc==0
-replace  content_score=SWanc_tt_inject+SWanc_bp+SWanc_blood+SWanc_urine+danger_sign_coun+SWanc_iron if anyanc==1
-tab content_score 
-tab all_content
+replace all_content=2 if (SWanc_tt_inject==1 & SWanc_bp==1 &  SWanc_blood==1 &  SWanc_urine==1 & danger_sign_coun1==1 & SWanc_nd_info_iron==1) & anyanc==1
 
 *=========================================================
 * Describe missingness *
@@ -461,7 +458,7 @@ graph box total_birth, name(parity_provider,replace) over(provider_code, relabel
 
 
 *=========================================================
-* Table 1 *
+* TABLE 1 *
 *=========================================================
 
 * Run the biggest model to keep sample size consistent 
@@ -469,296 +466,24 @@ quietly svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp
 gen select = e(sample)
 */
 
-quietly svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.tt i.anc_num_cat i.anc_place i.iron
+quietly svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled preg_comp i.tt i.anc_num_cat i.anc_place i.iron
 gen select = e(sample)
 tab select
+
 
 * By outcome
 foreach var in age_cat urban education wealthquintile region married ///
 				parity_cat unintended_preg preg_comp facility_skilled ///
-				anc_num_cat anc_place first_tri bp weight blood urine danger_sign_coun tt iron {
+				anc_num_cat anc_place first_tri bp blood urine danger_sign_coun tt iron {
 
 	svy: tab `var' SWdelivprob_convuls if select, col
 	
 }
+;
 
-*=========================================================
-* Logistic regression *
-*=========================================================
-
-*** Crude effect among all women ***
-
-* ANC frequency
-svy: logistic SWdelivprob_convuls i.anc_num_cat if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = 1-3 4+ _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) replace
-putexcel A1 = "ANC Frequency", bold overwritefmt
-putexcel E2 = "N = ", right bold overwritefmt
-putexcel F2 = `e(N)', hcenter bold overwritefmt
-putexcel A3 = matrix(results), names nformat(number_d2)
-
-* ANC provider type and location 
-svy: logistic SWdelivprob_convuls i.anc_place if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = HEW PHCP_HF PHCP_hos _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A8 = "ANC Provider Type and Location", bold overwritefmt
-putexcel E9 = "N = ", right bold overwritefmt
-putexcel F9 = `e(N)', hcenter bold overwritefmt
-putexcel A10 = matrix(results), names nformat(number_d2)
-
-* ANC timing 
-svy: logistic SWdelivprob_convuls i.ga_first_anc_cat if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = first_trimester second_trimester third_trimester missing _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A16 = "Timing at first ANC", bold overwritefmt
-putexcel E17 = "N = ", right bold overwritefmt
-putexcel F17 = `e(N)', hcenter bold overwritefmt
-putexcel A18 = matrix(results), names nformat(number_d2)
-
-* ANC in the first trimester 
-svy: logistic SWdelivprob_convuls i.first_tri if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = AfterFristTri InFristTri _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A25 = "Received ANC in the first trimester", bold overwritefmt
-putexcel E26 = "N = ", right bold overwritefmt
-putexcel F26 = `e(N)', hcenter bold overwritefmt
-putexcel A27 = matrix(results), names nformat(number_d2)
-
-* BP measurement 
-svy: logistic SWdelivprob_convuls i.bp if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A33 = "BP measurement at ANC", bold overwritefmt
-putexcel E34 = "N = ", right bold overwritefmt
-putexcel F34 = `e(N)', hcenter bold overwritefmt
-putexcel A35 = matrix(results), names nformat(number_d2)
-
-* Weight measurement 
-svy: logistic SWdelivprob_convuls i.weight if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A41 = "Weight measurement at ANC", bold overwritefmt
-putexcel E42 = "N = ", right bold overwritefmt
-putexcel F42 = `e(N)', hcenter bold overwritefmt
-putexcel A43 = matrix(results), names nformat(number_d2)
-
-* Urine test 
-svy: logistic SWdelivprob_convuls i.urine if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A49 = "Urine tested at ANC", bold overwritefmt
-putexcel E50 = "N = ", right bold overwritefmt
-putexcel F50 = `e(N)', hcenter bold overwritefmt
-putexcel A51 = matrix(results), names nformat(number_d2)
-
-* Blood sample
-svy: logistic SWdelivprob_convuls i.blood if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A57 = "Blood sample taken at ANC", bold overwritefmt
-putexcel E58 = "N = ", right bold overwritefmt
-putexcel F58 = `e(N)', hcenter bold overwritefmt
-putexcel A60 = matrix(results), names nformat(number_d2)
-
-* PE-related danger sign counseling
-svy: logistic SWdelivprob_convuls i.danger_sign_coun if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A65 = "PE-related danger sign counseling", bold overwritefmt
-putexcel E66 = "N = ", right bold overwritefmt
-putexcel F66 = `e(N)', hcenter bold overwritefmt
-putexcel A67 = matrix(results), names nformat(number_d2)
-
-* Tetanus injection
-recode SWanc_tt_inject(. -88 -99 = 0)
-svy: logistic SWdelivprob_convuls i.tt if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A73 = "Tetanus injection at ANC", bold overwritefmt
-putexcel E74 = "N = ", right bold overwritefmt
-putexcel F74 = `e(N)', hcenter bold overwritefmt
-putexcel A75 = matrix(results), names nformat(number_d2)
-
-* Iron counseling at ANC 
-svy: logistic SWdelivprob_convuls i.iron if select
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude) modify
-putexcel A81 = "Iron counseling at ANC", bold overwritefmt
-putexcel E82 = "N = ", right bold overwritefmt
-putexcel F82= `e(N)', hcenter bold overwritefmt
-putexcel A83 = matrix(results), names nformat(number_d2)
-
-
-*** Crude effect among women with signs of preeclampsia ***
-
-* ANC frequency
-svy: logistic SWdelivprob_convuls i.anc_num_cat if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = 1-3 4+ _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A1 = "ANC Frequency", bold overwritefmt
-putexcel E2 = "N = ", right bold overwritefmt
-putexcel F2 = `e(N)', hcenter bold overwritefmt
-putexcel A3 = matrix(results), names nformat(number_d2)
-
-* ANC provider type and location 
-svy: logistic SWdelivprob_convuls i.anc_place if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = HEW PHCP_HF PHCP_hos _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A8 = "ANC Provider Type and Location", bold overwritefmt
-putexcel E9 = "N = ", right bold overwritefmt
-putexcel F9 = `e(N)', hcenter bold overwritefmt
-putexcel A10 = matrix(results), names nformat(number_d2)
-
-* ANC timing 
-svy: logistic SWdelivprob_convuls i.ga_first_anc_cat if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = first_trimester second_trimester third_trimester missing _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A16 = "Timing at first ANC", bold overwritefmt
-putexcel E17 = "N = ", right bold overwritefmt
-putexcel F17 = `e(N)', hcenter bold overwritefmt
-putexcel A18 = matrix(results), names nformat(number_d2)
-
-* ANC in the first trimester 
-svy: logistic SWdelivprob_convuls i.first_tri if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = AfterFirstTri InFirstTri _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A25 = "Received ANC in the first trimester", bold overwritefmt
-putexcel E26 = "N = ", right bold overwritefmt
-putexcel F26 = `e(N)', hcenter bold overwritefmt
-putexcel A27 = matrix(results), names nformat(number_d2)
-
-* BP measurement 
-svy: logistic SWdelivprob_convuls i.bp if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A33 = "BP measurement at ANC", bold overwritefmt
-putexcel E34 = "N = ", right bold overwritefmt
-putexcel F34 = `e(N)', hcenter bold overwritefmt
-putexcel A35 = matrix(results), names nformat(number_d2)
-
-* Weight measurement 
-svy: logistic SWdelivprob_convuls i.weight if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A41 = "Weight measurement at ANC", bold overwritefmt
-putexcel E42 = "N = ", right bold overwritefmt
-putexcel F42 = `e(N)', hcenter bold overwritefmt
-putexcel A43 = matrix(results), names nformat(number_d2)
-
-* Urine test 
-svy: logistic SWdelivprob_convuls i.urine if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A49 = "Urine test at ANC", bold overwritefmt
-putexcel E50 = "N = ", right bold overwritefmt
-putexcel F50 = `e(N)', hcenter bold overwritefmt
-putexcel A51 = matrix(results), names nformat(number_d2)
-
-* Blood sample
-svy: logistic SWdelivprob_convuls i.blood if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A57 = "Blood sample taken at ANC", bold overwritefmt
-putexcel E58 = "N = ", right bold overwritefmt
-putexcel F58 = `e(N)', hcenter bold overwritefmt
-putexcel A60 = matrix(results), names nformat(number_d2)
-
-* PE-related danger sign counseling
-svy: logistic SWdelivprob_convuls i.danger_sign_coun if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A65 = "PE-related danger sign counseling", bold overwritefmt
-putexcel E66 = "N = ", right bold overwritefmt
-putexcel F66 = `e(N)', hcenter bold overwritefmt
-putexcel A67 = matrix(results), names nformat(number_d2)
-
-* Tetanus injection
-recode SWanc_tt_inject(. -88 -99 = 0)
-svy: logistic SWdelivprob_convuls i.tt if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A73 = "Tetanus injection at ANC", bold overwritefmt
-putexcel E74 = "N = ", right bold overwritefmt
-putexcel F74 = `e(N)', hcenter bold overwritefmt
-putexcel A75 = matrix(results), names nformat(number_d2)
-
-* Iron counseling at ANC 
-svy: logistic SWdelivprob_convuls i.iron if select & preg_comp==1
-mat temp = r(table)'
-mat results = temp[2..., "b"], temp[2..., "pvalue"], temp[2..., "ll"], temp[2..., "ul"]
-matrix rownames results = No Yes _cons
-matrix colnames results = OR P-value CI-lower CI-upper 
-putexcel set Regression_output_$date.xlsx, sheet(crude-1) modify
-putexcel A81 = "Iron counseling at ANC", bold overwritefmt
-putexcel E82 = "N = ", right bold overwritefmt
-putexcel F82= `e(N)', hcenter bold overwritefmt
-putexcel A83 = matrix(results), names nformat(number_d2)
 
 *=====================================================================
-* adjusted-all results *
+* MULTIPLE LOGISTIC REGRESSOIN  *
 *=====================================================================
 
 *==================================*
@@ -772,7 +497,7 @@ mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
 matrix colnames results = OR P-value CI-lower CI-upper
-putexcel set Regression_output_$date.xlsx, sheet(adjusted) modify
+putexcel set Regression_output_$date.xlsx, sheet(adjusted) replace
 putexcel A1 = "Adjusted logistic regression results among all women", bold overwritefmt
 putexcel A3 = "ANC Frequency", bold overwritefmt
 putexcel E4 = "N = ", right bold overwritefmt
@@ -895,12 +620,12 @@ putexcel F199 = `e(N)', hcenter bold overwritefmt
 putexcel A200 = matrix(results), names nformat(number_d2)
 
 *=====================================================*
-* Among all women with signs of preeclampsia * 
+* Among rural women * 
 *=====================================================*
 
 *** ANC Frequency *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.anc_num_cat if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.anc_num_cat if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -914,7 +639,7 @@ putexcel A5 = matrix(results), names nformat(number_d2)
 
 *** ANC provider type and location *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.anc_place if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.anc_place if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -927,7 +652,7 @@ putexcel A25 = matrix(results), names nformat(number_d2)
 
 *** ANC in the first trimester *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.first_tri if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.first_tri if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -940,7 +665,7 @@ putexcel A46 = matrix(results), names nformat(number_d2)
 
 *** BP measurement *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.bp if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.bp if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -953,7 +678,7 @@ putexcel A68= matrix(results), names nformat(number_d2)
 
 *** Weight measurement *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.weight if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled  preg_comp i.weight if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -966,7 +691,7 @@ putexcel A90= matrix(results), names nformat(number_d2)
 
 *** Urine test*** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.urine if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.urine if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -978,7 +703,7 @@ putexcel F111 = `e(N)', hcenter bold overwritefmt
 putexcel A112= matrix(results), names nformat(number_d2)
 
 *** Blood sample *** 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.blood if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.blood if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -991,7 +716,7 @@ putexcel A134= matrix(results), names nformat(number_d2)
 
 *** PE/E danger sign counseling *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.danger_sign_coun if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.danger_sign_coun if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -1004,7 +729,7 @@ putexcel A156 = matrix(results), names nformat(number_d2)
 
 *** Tetanus injection *** 
 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.tt if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.tt if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
@@ -1016,7 +741,7 @@ putexcel F177 = `e(N)', hcenter bold overwritefmt
 putexcel A178 = matrix(results), names nformat(number_d2)
 
 *** Counseling on iron ** 
-svy: logistic SWdelivprob_convuls i.age_cat urban i.parity_cat i.facility_skilled i.iron if select & preg_comp==1
+svy: logistic SWdelivprob_convuls i.age_cat i.parity_cat i.facility_skilled preg_comp i.iron if select & urban==0
 mat temp = r(table)'
 mat results = temp[1..., "b"], temp[1..., "pvalue"], temp[1..., "ll"], temp[1..., "ul"]
 mat list results
