@@ -21,7 +21,7 @@ global date=subinstr("`c_today'", " ", "",.)
 
 * Set macros for data sets
 	local baselinedata "/Users/Ellie/Dropbox (Gates Institute)/PMAET2_Datasets/1-Cohort1/1-Baseline/Prelim100/Cohort1_Baseline_WealthWeightAll_3Nov2020.dta"
-	local sixweekdata  "/Users/Ellie/Dropbox (Gates Institute)/PMAET2_Datasets/1-Cohort1/2-6Week/Prelim100/Cohort1_NoName_6W_Clean_27Jan2021.dta"
+	local sixweekdata  "/Users/Ellie/Dropbox (Gates Institute)/PMAET2_Datasets/1-Cohort1/2-6Week/Prelim100/Cohort1_NoName_6W_Clean_9Mar2021.dta"
 
 	global datadir "/Users/Ellie/Desktop/THESIS/Data"
 
