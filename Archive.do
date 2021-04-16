@@ -89,9 +89,89 @@ saving(Tables/table1_$date.xlsx, replace) // save table 1
 ;
 #delimit cr
 
+
+
+*=========================================================
+* EDA *
+*=========================================================
+
+* Tabulation of outcome and potential confounders
+* Background characteristics
+/*
+tabout SWdelivprob_convuls age_cat [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls education [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls urban [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls married [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls parity_cat [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+
+* ANC and delivery care 
+tabout SWdelivprob_convuls anyanc [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls ANC4 [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls anc_key_services [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls birth_readiness_all [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls preg_comp [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls facility_deliv [aw=SWweight] using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls sba [aw=SWweight]  using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+tabout SWdelivprob_convuls SWcaesarean_delivery [aw=SWweight]  using "Thesis_output_$date.xls", append cells(freq col) f(0 1) npos(col) clab(n %) 
+
+
+* Lowess smoothed regressions -- continuous Xs
+
+* Age
+lowess SWdelivprob_convuls FQ_age, name(age,replace) logit msymbol(i) bwidth(0.8) yline(0) t1("Lowess plot: log odds age -vs- any complication")
+graph export graphs/lowess_age.png,replace
+
+* Parity
+lowess SWdelivprob_convuls total_birth, name(parity,replace) logit msymbol(i) bwidth(0.8) yline(0) t1("Lowess plot: log odds parity -vs- any complication")
+graph export graphs/lowess_parity.png,replace
+
+* Number of ANC 
+lowess SWdelivprob_convuls anc_tot, name(anc,replace) logit msymbol(i) bwidth(0.8) yline(0) t1("Lowess plot: log odds ANC -vs- any complication")
+graph export graphs/lowess_anc.png,replace
+
+* GA at first ANC
+lowess SWdelivprob_convuls ga_first_anc if ga_first_anc!=0, name(ga_anc,replace) logit msymbol(i) bwidth(0.8) yline(0) t1("Lowess plot: log odds GA at first ANC -vs- any complication")
+graph export graphs/lowess_ga.png,replace
+
+* k x 2 tables -- categorical Xs
+for var age_cat:  tabulate X SWdelivprob_convuls, chi2 exact column
+for var parity_cat:  tabulate X SWdelivprob_convuls, chi2 exact column
+for var education:  tabulate X SWdelivprob_convuls, chi2 exact column
+for var anc_num_cat:  tabulate X SWdelivprob_convuls, chi2 exact column
+
+
+graph box FQ_age, name(age_provider,replace) over(provider_code, relabel(1 "No ANC" 2 "HEW only" 3 "PHCP only" 4 "Both")) ///
+	marker(1,mlab(FQ_age)) t1("Age by provider type") scale(1.2) ytitle("Age (years)") 
+	graph export graphs/age_provider.png, replace
+
+graph box total_birth, name(parity_provider,replace) over(provider_code, relabel(1 "No ANC" 2 "HEW only" 3 "PHCP only" 4 "Both")) ///
+	marker(1,mlab(total_birth)) t1("Parity by provider type") scale(1.2) ytitle("Number of children") 
+	graph export graphs/parity_provider.png, replace
+	
+	
+
 *=========================================================
 * Logistic regression *
 *=========================================================
+
+*======================
+* TEST ON WEIGHTING
+*======================
+/*
+svyset EA [pweight=SWweight], strata(strata) singleunit(scaled)
+svy: logistic eclampsia i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_num_cat if select
+
+svyset EA, strata(strata) singleunit(scaled)
+svy: logistic eclampsia i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_num_cat if select
+
+svyset EA [pweight=SWweight], strata(strata) singleunit(scaled)
+svy: logistic eclampsia i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_place if select
+
+svyset EA, strata(strata) singleunit(scaled)
+svy: logistic eclampsia i.age_cat urban i.parity_cat preg_comp i.facility_skilled i.anc_place if select
+*/
+
+
 
 *** Crude effect among all women ***
 
